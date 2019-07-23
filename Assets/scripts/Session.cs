@@ -4,17 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace WarGame
-{
-    public enum GameState
-    {
+namespace WarGame {
+    public enum GameState {
         Initialize,
         Play,
         End,
         Pause
     }
-    public enum RoundState
-    {
+    public enum RoundState {
         Start,
         Draw,
         Reveal,
@@ -27,8 +24,7 @@ namespace WarGame
     /// The Game class is a Unity-based manager.
     /// It maintains the state of the game and coordinates the various parts
     /// </summary>
-    public class Session : MonoBehaviour
-    {
+    public class Session : MonoBehaviour {
         // Prefab for game. Create instant to generate container of cards 
         public Deck deckPrefab;
         // The players' personal pile of cards
@@ -56,8 +52,7 @@ namespace WarGame
          *                  * This may trigger the end of the session as well
          */
         // Start is called before the first frame update
-        void Start()
-        {
+        void Start() {
             // trigger = false;
             // forwardStep = false;
             pool = new List<List<CardData>>();
@@ -79,24 +74,19 @@ namespace WarGame
          */
 
         // Update is called once per frame
-        void Update()
-        {
+        void Update() {
             AdvanceRoundState();
             UpdateGame();
 
         }
-        void AdvanceRoundState()
-        {
-            if (advanceState)
-            {
+        void AdvanceRoundState() {
+            if (advanceState) {
                 advanceState = false;
                 var lastLiveState = curRoundState;
-                if (lastLiveState == RoundState.Wait)
-                {
+                if (lastLiveState == RoundState.Wait) {
                     lastLiveState = prevRoundState;
                 }
-                switch (lastLiveState)
-                {
+                switch (lastLiveState) {
                     case RoundState.Start:
                         curRoundState = RoundState.Draw;
                         break;
@@ -123,10 +113,8 @@ namespace WarGame
                 }
             }
         }
-        void UpdateGame()
-        {
-            switch (curGameState)
-            {
+        void UpdateGame() {
+            switch (curGameState) {
                 case GameState.Initialize:
                     InitializeGame();
                     break;
@@ -141,80 +129,54 @@ namespace WarGame
                     break;
             }
         }
-        void InitializeGame()
-        {
+        void InitializeGame() {
             SplitDeck();
             curGameState = GameState.Play;
         }
 
-        void SplitDeck()
-        {
+        void SplitDeck() {
             // Create a full deck of cards. Game Object doesn't matter, just the attached script.
             var deck = Instantiate(deckPrefab, Vector3.zero, Quaternion.identity).GetComponent<Deck>();
             var script = deck.GetComponent<Deck>();
             var length = script.Count();
             // Pass a card to each player until the full deck has been ran through
-            for (var i = 0; i < length; i++)
-            {
-                if (i % 2 == 0)
-                {
+            for (var i = 0; i < length; i++) {
+                if (i % 2 == 0) {
                     stocks[0].Add(script.Deal());
-                }
-                else
-                {
+                } else {
                     stocks[1].Add(script.Deal());
                 }
             }
             Destroy(deck);
         }
 
-        public void NextStep()
-        {
+        public void NextStep() {
             OnRoundStep(this, EventArgs.Empty);
         }
-        public void a_OnRoundStep(object sender, EventArgs e)
-        {
+        public void a_OnRoundStep(object sender, EventArgs e) {
             Debug.Log("Event Triggered");
             advanceState = true;
         }
-        public void Draw(List<Stock> stocks, int amountToDraw = 1)
-        {
-            foreach (Stock stock in stocks)
-            {
+        public void Draw(List<Stock> stocks, int amountToDraw = 1) {
+            foreach (Stock stock in stocks) {
                 stock.Draw(amountToDraw);
             }
         }
-        public void Reveal(List<Stock> stocks)
-        {
-            foreach (Stock stock in stocks)
-            {
+        public void Reveal(List<Stock> stocks) {
+            foreach (Stock stock in stocks) {
                 stock.Reveal();
-                var list = new List<CardData>();
-                list.AddRange(stock.CurCard);
-                pool.Add(list);
-                stock.CurCard.Clear();
+                // var list = new List<CardData>();
+                // list.AddRange(stock.CurCard);
+                // pool.Add(list);
+                // stock.CurCard.Clear();
             }
         }
-        public List<Tuple<int, List<CardData>>> Evaluate(List<Stock> stocks)
-        {
-            var valueAndCards = new List<Tuple<int, List<CardData>>>();
-            foreach (List<CardData> list in pool)
-            {
-                var topCard = list.Last();
-                valueAndCards.Add(Tuple.Create<int, List<CardData>>(EvaluateValue(topCard), list));
-                // values.Add(EvaluateValue(list.Last()));
-            }
-            return valueAndCards;
-        }
-        public void Destroy(List<Stock> stocks)
-        {
-            foreach (Stock stock in stocks)
-            {
+        public void Destroy(List<Stock> stocks) {
+            foreach (Stock stock in stocks) {
                 stock.Destroy();
             }
         }
-        public bool AssessWinner(List<int> values)
-        {
+        public bool Evaluate(List<Stock> stocks) {
             /*
              * Assessment Step
              * - Gather the active card for each player
@@ -222,59 +184,55 @@ namespace WarGame
              * - Compare the values for each player
              * - Set and Announce the winner
              */
-            var p1 = values[0];
-            var p2 = values[1];
-            // p1 = 1;
-            // p2 = 1;
-            Stock winner;
-            bool isTie = false;
-            if (p1 > p2)
-            {
-                Debug.Log("Player 1 wins: " + p1.ToString() + " beats " + p2.ToString());
-                winner = stocks[0];
-                roundWinner = stocks[0];
-                foreach (List<CardData> list in pool)
-                {
-                    winner.Add(list);
+            Stock selectedStock = null;
+            var isTie = false;
+            foreach (Stock stock in stocks) {
+                if (selectedStock != null) {
+                    // Compare stocks by top card
+                    var result = selectedStock.GetTopCard().CompareRank(stock.GetTopCard());
+                    if (result == 0) {
+                        // Tie!
+                        isTie = true;
+                        selectedStock = null;
+                    } else if (result < 0) {
+                        // selectedStock is less than stock
+                        // Replace selectedStock with new highestValue
+                        selectedStock = stock;
+                    }
+                    // if result > 0, selectedStock remains highest. No change.
+                } else {
+                    // Set initial value
+                    selectedStock = stock;
                 }
+            }
+            Debug.Log(selectedStock.name + " has won the round with a " + selectedStock.GetTopCard().ToString());
+            // Transfer in-play cards to neutral pool
+            foreach (Stock stock in stocks) {
+                // Transfer cards to winner
+                var list = new List<CardData>();
+                list.AddRange(stock.CurCard);
+                pool.Add(list);
+                stock.CurCard.Clear();
+            }
+            // Transfer evaluated cards to a pool
+            if (!isTie) {
+                foreach (List<CardData> list in pool) {
+                    selectedStock.Add(list);
+                }
+                pool.Clear();
 
-                pool.Clear();
-            }
-            else if (p2 > p1)
-            {
-                Debug.Log("Player 2 wins: " + p2.ToString() + " beats " + p1.ToString());
-                winner = stocks[1];
-                roundWinner = stocks[1];
-                foreach (List<CardData> list in pool)
-                {
-                    winner.Add(list);
-                }
-                pool.Clear();
-            }
-            else
-            {
-                // tie
-                Debug.Log("It's a tie. Time for WAR!");
-                isTie = true;
-            }
-            if (!isTie)
-            {
+                // Destroy game objects
                 var cards = GameObject.FindGameObjectsWithTag("Card");
-                foreach (var card in cards)
-                {
+                foreach (var card in cards) {
                     var script = card.GetComponent<CardDisplay>();
-                    script.destination = roundWinner.GetComponent<Stock>().GetDestination();
+                    script.destination = selectedStock.GetDestination();
                     script.FlipCard();
                 }
             }
             return isTie;
-
-
         }
-        public void UpdateRound()
-        {
-            switch (curRoundState)
-            {
+        public void UpdateRound() {
+            switch (curRoundState) {
                 case RoundState.Start:
                     Debug.Log("Start State Executing");
                     WaitForInput();
@@ -291,14 +249,11 @@ namespace WarGame
                     break;
                 case RoundState.Evaluate:
                     Debug.Log("Evaluate State Executing");
-                    var values = Evaluate(stocks);
-                    var isTie = AssessWinner(values);
-                    if (isTie)
-                    {
+                    // var values = Evaluate(stocks);
+                    var isTie = Evaluate(stocks);
+                    if (isTie) {
                         amountToDraw = 3;
-                    }
-                    else
-                    {
+                    } else {
                         amountToDraw = 1;
                         Destroy(stocks);
                     }
@@ -316,63 +271,14 @@ namespace WarGame
                     break;
             }
             curStep++;
-            if (curStep > 2)
-            {
+            if (curStep > 2) {
                 curStep = 0;
             }
 
         }
-        public void WaitForInput()
-        {
+        public void WaitForInput() {
             prevRoundState = curRoundState;
             curRoundState = RoundState.Wait;
-        }
-        static int EvaluateValue(CardData card)
-        {
-            var value = 0;
-            switch (card.GetRank())
-            {
-                case Rank.Ace:
-                    value = 14;
-                    break;
-                case Rank.Two:
-                    value = 2;
-                    break;
-                case Rank.Three:
-                    value = 3;
-                    break;
-                case Rank.Four:
-                    value = 4;
-                    break;
-                case Rank.Five:
-                    value = 5;
-                    break;
-                case Rank.Six:
-                    value = 6;
-                    break;
-                case Rank.Seven:
-                    value = 7;
-                    break;
-                case Rank.Eight:
-                    value = 8;
-                    break;
-                case Rank.Nine:
-                    value = 9;
-                    break;
-                case Rank.Ten:
-                    value = 10;
-                    break;
-                case Rank.Jack:
-                    value = 11;
-                    break;
-                case Rank.Queen:
-                    value = 12;
-                    break;
-                case Rank.King:
-                    value = 13;
-                    break;
-            }
-            return value;
         }
     }
 }

@@ -25,5 +25,22 @@ namespace WarGame
         {
             return rank;
         }
+        public int CompareRank(CardData target)
+        {
+            int myValue, targetValue;
+            myValue = Rules.rankWeight[rank];
+            targetValue = Rules.rankWeight[target.rank];
+
+            var result = 0; // myValue == targetValue
+            if (myValue > targetValue)
+            {
+                result = 1;
+            }
+            else if (myValue < targetValue)
+            {
+                result = -1;
+            }
+            return result;
+        }
     }
 }

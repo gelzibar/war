@@ -110,5 +110,9 @@ namespace WarGame
             var destination = transform.GetChild(0);
             return destination.position;
         }
+        public CardData GetTopCard()
+        {
+            return curCard.Last();
+        }
     }
 }
