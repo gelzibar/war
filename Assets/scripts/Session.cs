@@ -5,21 +5,6 @@ using System.Linq;
 using UnityEngine;
 
 namespace WarGame {
-    public enum GameState {
-        Initialize,
-        Play,
-        End,
-        Pause
-    }
-    public enum RoundState {
-        Start,
-        Draw,
-        Reveal,
-        Evaluate,
-        End,
-        Pause,
-        Wait
-    }
     /// <summary>
     /// The Game class is a Unity-based manager.
     /// It maintains the state of the game and coordinates the various parts
@@ -190,6 +175,7 @@ namespace WarGame {
                 if (selectedStock != null) {
                     // Compare stocks by top card
                     var result = selectedStock.GetTopCard().CompareRank(stock.GetTopCard());
+                    result = 0;
                     if (result == 0) {
                         // Tie!
                         isTie = true;
@@ -205,7 +191,10 @@ namespace WarGame {
                     selectedStock = stock;
                 }
             }
-            Debug.Log(selectedStock.name + " has won the round with a " + selectedStock.GetTopCard().ToString());
+            if (!isTie)
+            {
+                Debug.Log(selectedStock.name + " has won the round with a " + selectedStock.GetTopCard().ToString());
+            }
             // Transfer in-play cards to neutral pool
             foreach (Stock stock in stocks) {
                 // Transfer cards to winner

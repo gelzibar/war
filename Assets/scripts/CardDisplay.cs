@@ -6,6 +6,7 @@ namespace WarGame
     public class CardDisplay : MonoBehaviour
     {
         public Vector3 destination;
+        public float destinationOffset;
         public CardData data;
         private Transform myTransform;
         private Animation animationControl;
@@ -39,6 +40,8 @@ namespace WarGame
 
             animationControl = GameObject.Find("AnimationManager").GetComponent<Animation>();
             destination = Animation.AssignTargets(this);
+            var x = (Mathf.Abs(destination.x) + destinationOffset) * Mathf.Sign(destination.x);
+            destination = new Vector3(x, destination.y, destination.z);
 
             rotateY = 5;
             vertSpeed = 0.5f;

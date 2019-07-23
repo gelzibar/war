@@ -13,7 +13,7 @@ namespace WarGame
         private List<CardData> curCard;
         public Vector3 position;
         public GameObject displayedCard;
-        private int positionOffset;
+        public int positionOffset;
         public List<CardData> CurCard
         {
             get { return curCard; }
@@ -59,6 +59,7 @@ namespace WarGame
             foreach (var card in list)
             {
                 var display = card.GetComponent<CardDisplay>();
+                if (display.data.Comp)
                 if (!display.isHidden)
                 {
                     display.FlipCard();
@@ -91,7 +92,8 @@ namespace WarGame
             //     rot = Quaternion.Euler(0, 180f, 0);
             // }
             rot = Quaternion.Euler(270f, 180f, 0);
-            var obj = Instantiate(prefabCard, pos, rot);
+            var startPos = transform.position;
+            var obj = Instantiate(prefabCard, startPos, rot);
             obj.name = this.name + " Card";
             displayedCard = obj;
             var rank = obj.transform.Find("Rank");
@@ -103,6 +105,7 @@ namespace WarGame
             var script = obj.GetComponent<CardDisplay>();
             script.owner = this.gameObject;
             obj.transform.parent = this.transform;
+            script.destinationOffset = positionOffset;
             // script.TriggerDealAnimation();
         }
         public Vector3 GetDestination()
